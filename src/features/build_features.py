@@ -125,9 +125,9 @@ def clean_kp_data(kp_data_raw, spellings, teams):
     logger.debug(f"{kenpom_df['TeamID'].isna().sum()} missing ID's")
 
     kp_cols = ['Season', 'TeamID',
-        'Rk', 'AdjEM', 'AdjO',
-        'Strength of Schedule_AdjD', 
-        'NCSOS_AdjT',  
+        'Rk', 'AdjEM', 'AdjO', 'AdjD', 'AdjT', 'Luck',
+       'Strength of Schedule_AdjEM', 'Strength of Schedule_OppO',
+       'Strength of Schedule_OppD', 'NCSOS_AdjEM'  
     ]
 
     kp_data = kenpom_df[kp_cols]
@@ -160,7 +160,7 @@ def main():
     spellings = pd.read_csv(data_dir / "external" / "MTeamSpellings.csv", encoding = "ISO-8859-1")
 
     # load kenpom exteral data:
-    kp_path = proj_dir / "data" / "raw" / "pomerlow.csv"
+    kp_path = proj_dir / "data" / "raw" / "kenpom.csv"
     kp_data_raw = pd.read_csv(kp_path)
 
     # clean kp data:
