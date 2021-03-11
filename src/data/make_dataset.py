@@ -27,14 +27,17 @@ def scrape_kp_season(season):
     # 2 rows of headers that repeat throughout table:
     headings1 = [th.get_text() for th in table.find("tr", attrs={"class":"thead1"}).find_all("th")]
     headings2 = [th.get_text() for th in table.find("tr", attrs={"class":"thead2"}).find_all("th")]
-    headings = [(h1 + "_" + h2).lstrip("_") for h1, h2 in zip(headings1, headings2)]
+    headings = headings2
+    headings[-4:-1] = [headings1[-2] + "_" + h for h in headings[-4:-1]]
+    headings[-1] = headings1[-1] + "_" + headings[-1]
 
     # initialize dataframe, loop and append
     kp_data = pd.DataFrame(columns=headings)
     tables = table.find_all("tbody")
     for table in tables:
         for row in table.find_all("tr"):
-            dataset = list(zip(headings, (td.get_text() for td in row.find_all("td"))))
+            row_data = [td.get_text() for td in  row.find_all("td") if td not in row.find_all(class_="td-right")]
+            dataset = list(zip(headings, row_data))
             kp_data = kp_data.append(dict(dataset), ignore_index=True)
     
     # still caught some empty rows:
@@ -64,12 +67,13 @@ def kp_data():
 def main():
     logger = logging.getLogger(__name__)
 
-    proj_path = Path().resolve().parents[1]
+    proj_path = Path().resolve()
     raw_data_path = proj_path / "data" / "raw" 
 
     kenpom_df = kp_data()
     kp_path = raw_data_path / "kenpom.csv"
     kenpom_df.to_csv(kp_path, index=False)
+    logger.info("KP data done.")
 
 
 if __name__ == '__main__':
