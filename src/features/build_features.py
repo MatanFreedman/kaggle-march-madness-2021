@@ -141,6 +141,42 @@ def clean_kp_data(kp_data_raw, spellings, teams):
     T2_kp.columns.values[0] = 'Season'
     return T1_kp, T2_kp
 
+def build_test_data(data):
+    proj_dir = Path().resolve().parents[0]
+    data_dir = proj_dir / "data" 
+    seeds = pd.read_csv(data_dir / "external" / 'MNCAATourneySeeds.csv')
+    regular_results = pd.read_csv(data_dir / "external" / 'MRegularSeasonDetailedResults.csv')
+    teams = pd.read_csv(data_dir / "external" / "MTeams.csv")
+    spellings = pd.read_csv(data_dir / "external" / "MTeamSpellings.csv", encoding = "ISO-8859-1")
+
+    # load kenpom exteral data:
+    kp_path = proj_dir / "data" / "raw" / "kenpom.csv"
+    kp_data_raw = pd.read_csv(kp_path)
+
+    # clean kp data:
+    T1_kp, T2_kp = clean_kp_data(kp_data_raw, spellings, teams)
+
+    #  prepare tourney and regular season data:
+    regular_data = prepare_data(regular_results)
+    
+    # feature eng:
+    # season statistics:
+    T1_season_stats, T2_season_stats = calc_season_statistics(regular_data)
+    last14_days_T1, last14_days_T2 = win_ratio_14_days(regular_data)
+    seeds_T1, seeds_T2 = calc_seed_diff(seeds)
+
+    # combine:
+    feature_set = data.merge(T1_season_stats, on=['Season', 'T1_TeamID'], how='left')
+    feature_set = feature_set.merge(T2_season_stats, on=['Season', 'T2_TeamID'], how='left')
+    feature_set = pd.merge(feature_set, last14_days_T1, on=['Season', 'T1_TeamID'], how='left')
+    feature_set = pd.merge(feature_set, last14_days_T2, on=['Season', 'T2_TeamID'], how='left')
+    feature_set = feature_set.merge(T1_kp, on=['Season', 'T1_TeamID'], how='left')
+    feature_set = feature_set.merge(T2_kp, on=['Season', 'T2_TeamID'], how='left')
+    feature_set = pd.merge(feature_set, seeds_T1, on=['Season', 'T1_TeamID'], how='left')
+    feature_set = pd.merge(feature_set, seeds_T2, on=['Season', 'T2_TeamID'], how='left')
+    feature_set['SeedDiff'] = feature_set['T1_seed'] - feature_set['T2_seed']
+    return feature_set
+
 
 def main():
     logger = logging.getLogger(__name__)
