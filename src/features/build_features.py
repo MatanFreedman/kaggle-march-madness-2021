@@ -5,6 +5,9 @@ import numpy as np
 
 import logging
 
+logger = logging.getLogger(__name__)
+logger.info("Building features")
+
 def prepare_data(df):
     """Prepares the regular and tournament datasets.
     
@@ -12,6 +15,9 @@ def prepare_data(df):
     ---------
     df : pandas DataFrame using the tournament/regular season CSV files
     """
+    # calc advanced stats:
+    df = calc_advanced_stats(df)
+
     # copies:
     winners = df.copy()
     losers = df.copy()
@@ -38,17 +44,77 @@ def prepare_data(df):
     output.location = output.location.astype(int)
     
     # calc point diff:
-    output['PointDiff'] = output['T1_Score'] - output['T2_Score']
+    output['T1_PointDiff'] = output['T1_Score'] - output['T2_Score']
     
     return output
+
+def calc_advanced_stats(data):
+    df = data.copy()
+    logger.info("Calculating advanced stats")
+    # Points Winning/Losing Team
+    logger.debug("W/LPts")
+    df['WPts'] = 2*df['WFGM'] + df['WFGM3'] + df['WFTM']
+    df['LPts'] = 2 * df['LFGM'] + df['LFGM3'] + df['LFTM']
+
+    #Calculate Winning/losing Team Possesion Feature
+    logger.debug("Pos")
+    wPos = 0.96*(df['WFGA'] + df['WTO'] + 0.44*df['WFTA'] - df['WOR'])
+    lPos = 0.96*(df.LFGA + df.LTO + 0.44*df.LFTA - df.LOR)
+    #two teams use almost the same number of possessions in a game
+    #(plus/minus one or two - depending on how quarters end)
+    #so let's just take the average
+    df['Pos'] = (wPos+lPos)/2
+
+    #Offensive efficiency (OffRtg) = 100 x (Points / Possessions)
+    logger.debug("W/L Offensive ratings")
+    df['WOffRtg'] = 100 * (df.WPts / df.Pos)
+    df['LOffRtg'] = 100 * (df.LPts / df.Pos)
+    #Defensive efficiency (DefRtg) = 100 x (Opponent points / Opponent possessions)
+    logger.debug("Defensive ratings")
+    df['WDefRtg'] = df.LOffRtg
+    df['LDefRtg'] = df.WOffRtg
+    #Net Rating = Off.Rtg - Def.Rtg
+    df['WNetRtg'] = df.WOffRtg - df.WDefRtg
+    df['LNetRtg'] = df.LOffRtg - df.LDefRtg
+                         
+    #Assist Ratio : Percentage of team possessions that end in assists
+    df['WAstR'] =  100 * df.WAst / (df.WFGA + 0.44*df.WFTA + df.WAst + df.WTO)
+    df['LAstR'] = 100 * df.LAst / (df.LFGA + 0.44*df.LFTA + df.LAst + df.LTO)
+    #Turnover Ratio: Number of turnovers of a team per 100 possessions used.
+    #(TO * 100) / (FGA + (FTA * 0.44) + AST + TO)
+    df['WTOR'] = 100 * df.WTO / (df.WFGA + 0.44*df.WFTA + df.WAst + df.WTO)
+    df['LTOR'] = 100 * df.LTO / (df.LFGA + 0.44*df.LFTA + df.LAst + df.LTO)
+                        
+    #The Shooting Percentage : Measure of Shooting Efficiency (FGA/FGA3, FTA)
+    df['WTSP'] = 100 * df.WPts / (2 * (df.WFGA + 0.44 * df.WFTA))
+    df['LTSP'] = 100 * df.LPts / (2 * (df.LFGA + 0.44 * df.LFTA))
+    #eFG% : Effective Field Goal Percentage adjusting for the fact that 3pt shots are more valuable 
+    df['WeFGP'] = (df.WFGM + 0.5 * df.WFGM3) / df.WFGA     
+    df['LeFGP'] = (df.LFGM + 0.5 * df.LFGM3) / df.LFGA  
+    #FTA Rate : How good a team is at drawing fouls.
+    df['WFTAR'] = df.WFTA / df.WFGA
+    df['LFTAR'] = df.LFTA / df.LFGA
+                            
+    #OREB% : Percentage of team offensive rebounds
+    df['WORP'] = df.WOR / (df.WOR + df.LDR)
+    df['LORP'] = df.LOR / (df.LOR + df.WDR)
+    #DREB% : Percentage of team defensive rebounds
+    df['WDRP'] = df.WDR / (df.WDR + df.LOR)
+    df['LDRP'] = df.LDR / (df.LDR + df.WOR)                                     
+    #REB% : Percentage of team total rebounds
+    df['WRP'] = (df.WDR + df.WOR) / (df.WDR + df.WOR + df.LDR + df.LOR)
+    df['LRP'] = (df.LDR + df.LOR) / (df.WDR + df.WOR + df.LDR + df.LOR)
+    logger.info("Done advanced stats")
+    return df
 
 def calc_season_statistics(regular_data):
     """Calc season statistics using Kaggle data
     """
-    boxscore_cols = [
-        'T1_FGM', 'T1_FGA', 'T1_FGM3', 'T1_FGA3', 'T1_OR', 'T1_Ast', 'T1_TO', 'T1_Stl', 'T1_PF', 
-        'T2_FGM', 'T2_FGA', 'T2_FGM3', 'T2_FGA3', 'T2_OR', 'T2_Ast', 'T2_TO', 'T2_Stl', 'T2_Blk',  
-        'PointDiff']
+    logger.info("Calculating season statistics")
+
+    exclude_cols = ['TeamID', 'Score', 'Loc']
+    exclude_cols2 = ["Season", "DayNum", "NumOT", "location"]
+    boxscore_cols = [c for c in regular_data.columns if c[3:] not in exclude_cols and c not in exclude_cols2]
 
     funcs = [np.mean]
 
@@ -70,13 +136,14 @@ def calc_season_statistics(regular_data):
 def win_ratio_14_days(regular_data):
     """Calculates win ratio column from prior 14 days
     """
+    logger.info("Calculating 14 day win ratio")
     # Calc prior 2 weeks win %
     last14_days_T1 = regular_data.loc[regular_data['DayNum']>118].reset_index(drop=True)
-    last14_days_T1['win'] = np.where(last14_days_T1['PointDiff'] > 0, 1, 0)
+    last14_days_T1['win'] = np.where(last14_days_T1['T1_PointDiff'] > 0, 1, 0)
     last14_days_T1 = last14_days_T1.groupby(['Season', 'T1_TeamID'])['win'].mean().reset_index(name='T1_win_ratio_14d')
 
     last14_days_T2 = regular_data.loc[regular_data['DayNum']>118].reset_index(drop=True)
-    last14_days_T2['win'] = np.where(last14_days_T2['PointDiff'] < 0, 1, 0)
+    last14_days_T2['win'] = np.where(last14_days_T2['T1_PointDiff'] < 0, 1, 0)
     last14_days_T2 = last14_days_T2.groupby(['Season', 'T2_TeamID'])['win'].mean().reset_index(name='T2_win_ratio_14d')
     return last14_days_T1, last14_days_T2
 

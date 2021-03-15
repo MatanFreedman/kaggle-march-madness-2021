@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import logging
 from pathlib import Path
+import os
 
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -14,7 +15,7 @@ def scrape_kp_season(season):
     season : int/str
     """
     logger = logging.getLogger(__name__)
-    logger.debug(f"Season {season}")
+    logger.info(f"Scraping season: {season}")
 
     # request data:
     url = f"http://www.kenpom.com/index.php?y={season}"
@@ -69,6 +70,11 @@ def main():
 
     proj_path = Path().resolve()
     raw_data_path = proj_path / "data" / "raw" 
+    if not os.path.exists(raw_data_path):
+        os.makedirs(raw_data_path)
+
+    if not os.path.exists(proj_path / "data" / "processed"):
+        os.makedirs(proj_path / "data" / "processed")
 
     kenpom_df = kp_data()
     kp_path = raw_data_path / "kenpom.csv"

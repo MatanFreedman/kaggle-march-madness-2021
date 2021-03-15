@@ -4,7 +4,7 @@ Kaggle-March-Madess-2021
 Kaggle March Madness Competition Entry
 
 To create files:
-1. Run makefile.bat <- this will require a kaggle api set up on your windows machine
+1. Run `makefile.bat` in cmd <- this will require a kaggle api set up on your windows machine
 2. Run `python -m venv venv`
 3. Run `venv\Scripts\activate`
 4. Run `pip install -r requirements`
