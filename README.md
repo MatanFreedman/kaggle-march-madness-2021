@@ -11,7 +11,8 @@ To create files:
 5. Run `python makefile.py`
 
 
-
+To submit preditions:
+kaggle competitions submit -c ncaam-march-mania-2021 -f models/all_feats.csv -m "Using all features and logistic regression models"
 
 Project Organization
 ------------
