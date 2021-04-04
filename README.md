@@ -41,7 +41,7 @@ My final model was an ensemble of 3 logistic regressions that used seperate data
 
 A histogram of the model output is shown below:
 
-![Training image](https://github.com/MatanFreedman/kaggle-march-madness-2021/blob/master/reports/figures/win_probabilities.PNG?raw=true)
+![Predictions image](https://github.com/MatanFreedman/kaggle-march-madness-2021/blob/master/reports/figures/win_probability.PNG?raw=true)
 
 # Final Results
 Unfortunately I believe by ensembling the models I overfit the data. Additionally, the Ken Pomeroy stats have data leakage in them, so that may have reduced the final score as well. My model had a log loss of 0.77456, which was much worse than my CV score when training. However, I also placed <img src="https://render.githubusercontent.com/render/math?math=1^st"> in my personal bracket competition with my friends, thus earning a cool $150 and bragging rights for the rest of the year.
