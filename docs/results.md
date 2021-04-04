@@ -25,7 +25,7 @@ I used the Kaggle provided data combined with data I scraped from kenpom.com. My
 
 The final dataset had 2230 records, where each record represents one game with all the mentioned variables calculated for T1_ and T2_. The outcome of each game was a "win" if T1_ Score was greater than T2_ score. As such each game had 2 rows, one for each team with the variables switched.
 
-![Dataset image](reports\figures\dataset.PNG)
+![Dataset image](..\reports\figures\dataset.PNG)
 
 
 # Modelling
@@ -33,7 +33,7 @@ I tried many different approaches, but after reading about previous years compet
 
 I used 'leave one group out' cross validation to accuratly score and compare my models. I trained each model using all seasons except for one, which I used to validate the model. This seemed to work well and was a recommended approach amoung many Kagglers.
 
-![Dataset image](reports\figures\cv_training.PNG)
+![Dataset image](..\reports\figures\cv_training.PNG)
 
 # Final Model
 The final model had a CV log_loss of 0.463, which was a pretty good Kaggle score. I was trying to be wary of overfitting, typically winning models had scores in the range of 0.45 - 0.55 and therefore I knew I was overfitting if I had scores below this range. 

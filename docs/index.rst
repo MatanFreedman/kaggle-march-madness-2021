@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Kaggle-March-Madess-2021 documentation!
+Kaggle-March-Madess-2021 Project By Matan Documentation!
 ==============================================
 
 Contents:
